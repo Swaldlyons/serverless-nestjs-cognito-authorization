@@ -1,0 +1,190 @@
+service: ${file(ServerlessScripts.js):stackName}-stack
+
+plugins:
+  - serverless-plugin-log-retention
+  - serverless-plugin-split-stacks
+  - serverless-domain-manager
+  - serverless-prune-plugin
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  stage: ${file(ServerlessScripts.js):stage}
+  region: ${file(ServerlessScripts.js):region}
+  profile: ${file(ServerlessScripts.js):profile}
+  logRetentionInDays: ${file(ServerlessScripts.js):logRetentionInDays}
+  timeout: 29
+  environment:
+    NODE_PATH: ${file(ServerlessScripts.js):nodePath}
+    ACCOUNT_ID: ${aws:accountId}
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    USER_POOL_ID: !Ref CognitoUserPool
+    CLIENT_ID: !Ref UserClient
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - cognito-idp:AdminInitiateAuth
+            - cognito-idp:AdminCreateUser
+            - cognito-idp:AdminSetUserPassword
+          Resource: '*'
+
+custom:
+  modulesLayer: ${self:service}-${self:provider.stage}-modules
+  srcLayer: ${self:service}-${self:provider.stage}-src
+  prune:
+    automatic: true
+    includeLayers: true
+  splitStacks:
+    perFunction: true
+    perType: false
+    perGroupFunction: false
+  customDomain:
+    rest:
+      domainName: ${file(ServerlessScripts.js):domainName}
+      basePath: auth
+
+package:
+  individually: true
+  excludeDevDependencies: true
+
+layers:
+  modules:
+    name: ${self:custom.modulesLayer}
+    path: layers/modules
+    compatibleRuntimes:
+      - nodejs16.x
+  src:
+    name: ${self:custom.srcLayer}
+    path: layers/src
+    compatibleRuntimes:
+      - nodejs16.x
+
+functions:
+  testAuth:
+    handler: dist/handlers/testAuth/main.handler
+    package:
+      patterns:
+        - '!*/**'
+        - 'dist/handlers/testAuth/**'
+    layers:
+      - !Ref ModulesLambdaLayer
+      - !Ref SrcLambdaLayer
+    events:
+      - http:
+          method: get
+          path: /
+          cors:
+            origin: '*'
+          authorizer:
+            name: PrivateAuthorizer
+            type: COGNITO_USER_POOLS
+            arn: !GetAtt CognitoUserPool.Arn
+            claims:
+              - email
+  updatePassword:
+    handler: dist/handlers/updatePassword/main.handler
+    package:
+      patterns:
+        - '!*/**'
+        - 'dist/handlers/updatePassword/**'
+    layers:
+      - !Ref ModulesLambdaLayer
+      - !Ref SrcLambdaLayer
+    events:
+      - http:
+          method: patch
+          path: /
+          cors:
+            origin: '*'
+          authorizer:
+            name: PrivateAuthorizer
+            type: COGNITO_USER_POOLS
+            arn: !GetAtt CognitoUserPool.Arn
+            claims:
+              - email
+  login:
+    handler: dist/handlers/login/main.handler
+    package:
+      patterns:
+        - '!*/**'
+        - 'dist/handlers/login/**'
+    layers:
+      - !Ref ModulesLambdaLayer
+      - !Ref SrcLambdaLayer
+    events:
+      - http:
+          method: post
+          path: /
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: false
+  create:
+    handler: dist/handlers/create/main.handler
+    package:
+      patterns:
+        - '!*/**'
+        - 'dist/handlers/create/**'
+    layers:
+      - !Ref ModulesLambdaLayer
+      - !Ref SrcLambdaLayer
+    events:
+      - http:
+          method: post
+          path: /create
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: false
+resources:
+  Resources:
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: ${self:service}-${self:provider.stage}-user-pool
+        UsernameAttributes:
+          - email
+        AutoVerifiedAttributes:
+          - email
+    CognitoUserPoolGroupA:
+      Type: AWS::Cognito::UserPoolGroup
+      Properties:
+        GroupName: 'group-a'
+        UserPoolId:
+          Ref: CognitoUserPool
+    UserClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: ${self:service}-${self:provider.stage}-user-pool-ui
+        GenerateSecret: false
+        UserPoolId: !Ref CognitoUserPool
+        RefreshTokenValidity: 1
+        AccessTokenValidity: 1
+        IdTokenValidity: 1
+        TokenValidityUnits:
+          RefreshToken: hours
+          AccessToken: hours
+          IdToken: hours
+        ExplicitAuthFlows:
+          - ALLOW_USER_PASSWORD_AUTH
+          - ALLOW_REFRESH_TOKEN_AUTH
+  Outputs:
+    CognitoUserPoolExport:
+      Value: !GetAtt CognitoUserPool.Arn
+      Export:
+        Name: ${self:service}-${self:provider.stage}-user-pool-export
