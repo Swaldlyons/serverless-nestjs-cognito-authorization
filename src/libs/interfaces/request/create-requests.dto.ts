@@ -1,5 +1,11 @@
 import { Expose } from 'class-transformer';
-import { IsEmail, IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  Matches,
+} from 'class-validator';
 
 import { CognitoGroupsEnum } from '/opt/src/libs/shared/cognito-groups-enum';
 
@@ -8,6 +14,14 @@ export class CreateRequestsDto {
   @IsNotEmpty()
   @Expose()
   readonly email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Matches(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+  )
+  @Expose()
+  readonly password: string;
 
   @IsEnum(CognitoGroupsEnum)
   @IsNotEmpty()

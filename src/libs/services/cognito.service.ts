@@ -19,8 +19,9 @@ const cognito = new CognitoIdentityServiceProvider({
 export class CognitoService {
   async create(
     email: string,
+    password: string,
     group: CognitoGroupsEnum,
-  ): Promise<AdminCreateUserResponse & { TemporaryPassword: string }> {
+  ): Promise<void> {
     console.log({
       SERVICE_NAME,
       params: {
@@ -40,13 +41,22 @@ export class CognitoService {
         MessageAction: 'SUPPRESS',
       })
       .promise();
-    await cognito.adminAddUserToGroup({
-      GroupName: group,
-      UserPoolId: userPoolId,
-      Username: email,
-    });
+    await cognito
+      .adminAddUserToGroup({
+        GroupName: group,
+        UserPoolId: userPoolId,
+        Username: email,
+      })
+      .promise();
+    await cognito
+      .adminSetUserPassword({
+        Password: password,
+        Permanent: true,
+        UserPoolId: userPoolId,
+        Username: email,
+      })
+      .promise();
     console.log({ SERVICE_NAME, response });
-    return { ...response, TemporaryPassword: temporaryPassword };
   }
 
   async updatePassword(email: string, password: string): Promise<boolean> {

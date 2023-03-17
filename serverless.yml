@@ -29,6 +29,7 @@ provider:
             - cognito-idp:AdminInitiateAuth
             - cognito-idp:AdminCreateUser
             - cognito-idp:AdminSetUserPassword
+            - cognito-idp:AdminAddUserToGroup
           Resource: '*'
 
 custom:
@@ -67,7 +68,7 @@ functions:
     handler: dist/handlers/testAuth/main.handler
     package:
       patterns:
-        - '!*/**'
+        - '!**'
         - 'dist/handlers/testAuth/**'
     layers:
       - !Ref ModulesLambdaLayer
@@ -88,7 +89,7 @@ functions:
     handler: dist/handlers/updatePassword/main.handler
     package:
       patterns:
-        - '!*/**'
+        - '!**'
         - 'dist/handlers/updatePassword/**'
     layers:
       - !Ref ModulesLambdaLayer
@@ -109,7 +110,7 @@ functions:
     handler: dist/handlers/login/main.handler
     package:
       patterns:
-        - '!*/**'
+        - '!**'
         - 'dist/handlers/login/**'
     layers:
       - !Ref ModulesLambdaLayer
@@ -132,7 +133,7 @@ functions:
     handler: dist/handlers/create/main.handler
     package:
       patterns:
-        - '!*/**'
+        - '!**'
         - 'dist/handlers/create/**'
     layers:
       - !Ref ModulesLambdaLayer
