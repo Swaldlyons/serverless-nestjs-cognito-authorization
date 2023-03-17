@@ -21,11 +21,17 @@ describe('CognitoService', () => {
       new AWS.CognitoIdentityServiceProvider(),
     );
     jest.spyOn(cognito, 'adminCreateUser').mockReturnValue({
-      promise: () => Promise.resolve({}),
+      promise: () => Promise.resolve(null),
+    });
+    jest.spyOn(cognito, 'adminAddUserToGroup').mockReturnValue({
+      promise: () => Promise.resolve(null),
+    });
+    jest.spyOn(cognito, 'adminSetUserPassword').mockReturnValue({
+      promise: () => Promise.resolve(null),
     });
     expect(
-      await service.create('email@mail.com', CognitoGroupsEnum.GROUP_A),
-    ).toEqual({ TemporaryPassword: '4FZZZXJYrx@' });
+      await service.create('email@mail.com', 'test', CognitoGroupsEnum.GROUP_A),
+    ).toBeUndefined();
   });
 
   it('should return update password', async () => {
@@ -33,7 +39,7 @@ describe('CognitoService', () => {
       new AWS.CognitoIdentityServiceProvider(),
     );
     jest.spyOn(cognito, 'adminSetUserPassword').mockReturnValue({
-      promise: () => Promise.resolve({}),
+      promise: () => Promise.resolve(null),
     });
     expect(await service.updatePassword('email@mail.com', 'test')).toEqual(
       true,

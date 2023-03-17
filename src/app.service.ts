@@ -18,17 +18,14 @@ export class AppService {
   constructor(private readonly _cognitoService: CognitoService) {}
   async create({
     email,
+    password,
     group,
   }: CreateRequestsDto): Promise<APIGatewayProxyResult> {
     try {
-      const { TemporaryPassword: password } = await this._cognitoService.create(
-        email,
-        group,
-      );
+      await this._cognitoService.create(email, password, group);
       return formatResponse<CreateResponseDto>(
         {
           email,
-          password,
         },
         SERVICE_NAME,
       );

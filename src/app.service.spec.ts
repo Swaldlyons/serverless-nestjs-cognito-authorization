@@ -1,9 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  AdminCreateUserResponse,
-  InitiateAuthResponse,
-} from 'aws-sdk/clients/cognitoidentityserviceprovider';
+import { InitiateAuthResponse } from 'aws-sdk/clients/cognitoidentityserviceprovider';
 
 import { AppService } from '/opt/src/app.service';
 import { CognitoService } from '/opt/src/libs/services/cognito.service';
@@ -33,21 +30,17 @@ describe('AppService', () => {
   it('should return create user', async () => {
     jest
       .spyOn(cognitoService, 'create')
-      .mockImplementation(
-        async (): Promise<
-          AdminCreateUserResponse & { TemporaryPassword: string }
-        > => Promise.resolve({ TemporaryPassword: 'test' }),
-      );
+      .mockImplementation(async (): Promise<void> => Promise.resolve(null));
     expect(
       await service.create({
         email: 'email@mail.com',
+        password: 'test',
         group: CognitoGroupsEnum.GROUP_A,
       }),
     ).toEqual(
       formatResponse(
         {
           email: 'email@mail.com',
-          password: 'test',
         },
         SERVICE_NAME,
       ),
@@ -61,6 +54,7 @@ describe('AppService', () => {
     expect(
       await service.create({
         email: 'email@mail.com',
+        password: 'test',
         group: CognitoGroupsEnum.GROUP_A,
       }),
     ).toEqual(
