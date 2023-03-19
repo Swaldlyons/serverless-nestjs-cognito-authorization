@@ -4,11 +4,12 @@ import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 
 import { AppModule } from '/opt/src/app.module';
 import { AppService } from '/opt/src/app.service';
-import { UpdatePasswordRequestsDto } from '/opt/src/libs/interfaces/request/update-password-requests.dto';
+import { UpdatePasswordRequestsDto } from '/opt/src/libs/dtos/requests/update-password-requests.dto';
 import {
   checkBody,
   errorResponse,
   errorsDto,
+  log,
   validateDto,
 } from '/opt/src/libs/utils';
 
@@ -24,7 +25,7 @@ exports.handler = async function (
   event: APIGatewayEvent,
   context: Context,
 ): Promise<APIGatewayProxyResult> {
-  console.info({ SERVICE_NAME, event, context });
+  log('INFO', { SERVICE_NAME, event, context });
   const app = await bootstrap();
   const appService = app.get(AppService);
   const param = await validateDto(
@@ -32,12 +33,14 @@ exports.handler = async function (
     checkBody(event.body),
   );
   const errors = await errorsDto(param);
+
   if (errors.length)
     return errorResponse(
       { message: errors },
       SERVICE_NAME,
       HttpStatus.BAD_REQUEST,
     );
+
   return await appService.updatePassword(
     param,
     event.requestContext.authorizer.claims.email,

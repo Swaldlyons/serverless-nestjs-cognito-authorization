@@ -1,28 +1,41 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CognitoIdentityServiceProvider } from 'aws-sdk';
 import {
   AdminCreateUserResponse,
   InitiateAuthResponse,
 } from 'aws-sdk/clients/cognitoidentityserviceprovider';
 
-import { CognitoGroupsEnum } from '/opt/src/libs/shared/cognito-groups-enum';
-import { ENV_VARS } from '/opt/src/libs/shared/enviroments';
+import { CognitoGroupsEnum } from '/opt/src/libs/enums/cognito-groups-enum';
+import { EnvironmentInterface } from '/opt/src/libs/interfaces/environment.interface';
+import { COGNITO_IDENTITY } from '/opt/src/libs/shared/injectables';
+import { log } from '/opt/src/libs/utils';
 
 const SERVICE_NAME = 'CognitoService';
-const { region, userPoolId, clientId } = ENV_VARS;
-const cognito = new CognitoIdentityServiceProvider({
-  region,
-  apiVersion: 'latest',
-});
 
 @Injectable()
 export class CognitoService {
+  private readonly _clientId: string;
+  private readonly _userPoolId: string;
+
+  constructor(
+    @Inject(COGNITO_IDENTITY)
+    private readonly _cognito: CognitoIdentityServiceProvider,
+    private readonly _configService: ConfigService,
+  ) {
+    const { clientId, userPoolId }: EnvironmentInterface =
+      this._configService.get<EnvironmentInterface>('config');
+
+    this._clientId = clientId;
+    this._userPoolId = userPoolId;
+  }
+
   async create(
     email: string,
     password: string,
     group: CognitoGroupsEnum,
   ): Promise<void> {
-    console.log({
+    log('INFO', {
       SERVICE_NAME,
       params: {
         email,
@@ -33,70 +46,70 @@ export class CognitoService {
     const temporaryPassword = `${random.substring(2, 10).toUpperCase()}${random
       .substring(11, 36)
       .toLowerCase()}@`;
-    const response: AdminCreateUserResponse = await cognito
+    const response: AdminCreateUserResponse = await this._cognito
       .adminCreateUser({
-        UserPoolId: userPoolId,
+        UserPoolId: this._userPoolId,
         Username: email,
         TemporaryPassword: temporaryPassword,
         MessageAction: 'SUPPRESS',
       })
       .promise();
-    await cognito
+
+    await this._cognito
       .adminAddUserToGroup({
         GroupName: group,
-        UserPoolId: userPoolId,
+        UserPoolId: this._userPoolId,
         Username: email,
       })
       .promise();
-    await cognito
+    await this._cognito
       .adminSetUserPassword({
         Password: password,
         Permanent: true,
-        UserPoolId: userPoolId,
+        UserPoolId: this._userPoolId,
         Username: email,
       })
       .promise();
-    console.log({ SERVICE_NAME, response });
+    log('INFO', { SERVICE_NAME, response });
   }
 
-  async updatePassword(email: string, password: string): Promise<boolean> {
-    console.log({
+  async updatePassword(email: string, password: string): Promise<void> {
+    log('INFO', {
       SERVICE_NAME,
       params: {
         email,
         password,
       },
     });
-    await cognito
+
+    await this._cognito
       .adminSetUserPassword({
         Password: password,
         Permanent: true,
-        UserPoolId: userPoolId,
+        UserPoolId: this._userPoolId,
         Username: email,
       })
       .promise();
-    return true;
   }
 
   async login(email: string, password: string): Promise<InitiateAuthResponse> {
-    console.log({
+    log('INFO', {
       SERVICE_NAME,
       params: {
         email,
         password,
       },
     });
-    const response: InitiateAuthResponse = await cognito
+
+    return await this._cognito
       .initiateAuth({
         AuthFlow: 'USER_PASSWORD_AUTH',
-        ClientId: clientId,
+        ClientId: this._clientId,
         AuthParameters: {
           USERNAME: email,
           PASSWORD: password,
         },
       })
       .promise();
-    console.log({ SERVICE_NAME, response });
-    return response;
   }
 }
