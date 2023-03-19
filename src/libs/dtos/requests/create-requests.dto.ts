@@ -7,7 +7,7 @@ import {
   Matches,
 } from 'class-validator';
 
-import { CognitoGroupsEnum } from '/opt/src/libs/shared/cognito-groups-enum';
+import { CognitoGroupsEnum } from '/opt/src/libs/enums/cognito-groups-enum';
 
 export class CreateRequestsDto {
   @IsEmail()

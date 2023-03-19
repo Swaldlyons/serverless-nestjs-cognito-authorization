@@ -1,10 +1,13 @@
 import { HttpStatus } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
+import { CognitoIdentityServiceProvider } from 'aws-sdk';
 import { InitiateAuthResponse } from 'aws-sdk/clients/cognitoidentityserviceprovider';
 
 import { AppService } from '/opt/src/app.service';
+import { CognitoGroupsEnum } from '/opt/src/libs/enums/cognito-groups-enum';
 import { CognitoService } from '/opt/src/libs/services/cognito.service';
-import { CognitoGroupsEnum } from '/opt/src/libs/shared/cognito-groups-enum';
+import { COGNITO_IDENTITY } from '/opt/src/libs/shared/injectables';
 import { errorResponse, formatResponse } from '/opt/src/libs/utils';
 
 const SERVICE_NAME = 'AppService';
@@ -16,8 +19,28 @@ describe('AppService', () => {
   beforeEach(async () => {
     global.console = require('console');
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AppService, CognitoService],
+      providers: [
+        AppService,
+        CognitoService,
+        {
+          provide: ConfigService,
+          useFactory: () => ({
+            get: () => ({
+              accountId: process.env.ACCOUNT_ID,
+              stage: process.env.STAGE,
+              region: process.env.REGION,
+              userPoolId: process.env.USER_POOL_ID,
+              clientId: process.env.CLIENT_ID,
+            }),
+          }),
+        },
+        {
+          provide: COGNITO_IDENTITY,
+          useValue: CognitoIdentityServiceProvider,
+        },
+      ],
     }).compile();
+
     service = module.get<AppService>(AppService);
     cognitoService = module.get<CognitoService>(CognitoService);
   });
@@ -99,7 +122,7 @@ describe('AppService', () => {
   it('should return update password', async () => {
     jest
       .spyOn(cognitoService, 'updatePassword')
-      .mockImplementation(async (): Promise<boolean> => Promise.resolve(true));
+      .mockImplementation(async (): Promise<void> => Promise.resolve(null));
     expect(
       await service.updatePassword(
         {
