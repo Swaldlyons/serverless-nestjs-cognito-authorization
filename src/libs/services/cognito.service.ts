@@ -1,7 +1,8 @@
 import {
-  AdminCreateUserResponse,
+  AdminCreateUserCommandOutput,
+  AdminSetUserPasswordCommandOutput,
   CognitoIdentityProvider,
-  InitiateAuthResponse,
+  InitiateAuthCommandOutput,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -34,7 +35,7 @@ export class CognitoService {
     email: string,
     password: string,
     group: CognitoGroupsEnum,
-  ): Promise<void> {
+  ): Promise<AdminCreateUserCommandOutput> {
     log('INFO', {
       SERVICE_NAME,
       params: {
@@ -46,7 +47,7 @@ export class CognitoService {
     const temporaryPassword = `${random.substring(2, 10).toUpperCase()}${random
       .substring(11, 36)
       .toLowerCase()}@`;
-    const response: AdminCreateUserResponse =
+    const response: AdminCreateUserCommandOutput =
       await this._cognito.adminCreateUser({
         UserPoolId: this._userPoolId,
         Username: email,
@@ -65,10 +66,14 @@ export class CognitoService {
       UserPoolId: this._userPoolId,
       Username: email,
     });
-    log('INFO', { SERVICE_NAME, response });
+
+    return response;
   }
 
-  async updatePassword(email: string, password: string): Promise<void> {
+  async updatePassword(
+    email: string,
+    password: string,
+  ): Promise<AdminSetUserPasswordCommandOutput> {
     log('INFO', {
       SERVICE_NAME,
       params: {
@@ -77,7 +82,7 @@ export class CognitoService {
       },
     });
 
-    await this._cognito.adminSetUserPassword({
+    return await this._cognito.adminSetUserPassword({
       Password: password,
       Permanent: true,
       UserPoolId: this._userPoolId,
@@ -85,7 +90,10 @@ export class CognitoService {
     });
   }
 
-  async login(email: string, password: string): Promise<InitiateAuthResponse> {
+  async login(
+    email: string,
+    password: string,
+  ): Promise<InitiateAuthCommandOutput> {
     log('INFO', {
       SERVICE_NAME,
       params: {

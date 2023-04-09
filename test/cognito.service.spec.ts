@@ -41,20 +41,18 @@ describe('CognitoService', () => {
   });
 
   it('should return create user', async () => {
-    cognito.adminCreateUser = jest.fn().mockResolvedValue(null);
+    cognito.adminCreateUser = jest.fn().mockResolvedValue({});
     cognito.adminAddUserToGroup = jest.fn().mockResolvedValue(null);
     cognito.adminAddUserToGroup = jest.fn().mockResolvedValue(null);
     cognito.adminSetUserPassword = jest.fn().mockResolvedValue(null);
     expect(
       await service.create('email@mail.com', 'test', CognitoGroupsEnum.GROUP_A),
-    ).toBeUndefined();
+    ).toEqual({});
   });
 
   it('should return update password', async () => {
-    cognito.adminSetUserPassword = jest.fn().mockResolvedValue(null);
-    expect(
-      await service.updatePassword('email@mail.com', 'test'),
-    ).toBeUndefined();
+    cognito.adminSetUserPassword = jest.fn().mockResolvedValue({});
+    expect(await service.updatePassword('email@mail.com', 'test')).toEqual({});
   });
 
   it('should return login', async () => {

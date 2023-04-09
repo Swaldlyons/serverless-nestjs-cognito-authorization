@@ -1,6 +1,8 @@
 import {
+  AdminCreateUserCommandOutput,
+  AdminSetUserPasswordCommandOutput,
   CognitoIdentityProvider,
-  InitiateAuthResponse,
+  InitiateAuthCommandOutput,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -53,23 +55,20 @@ describe('AppService', () => {
   });
 
   it('should return create user', async () => {
-    jest
-      .spyOn(cognitoService, 'create')
-      .mockImplementation(async (): Promise<void> => Promise.resolve(null));
+    jest.spyOn(cognitoService, 'create').mockImplementation(
+      async (): Promise<AdminCreateUserCommandOutput> =>
+        Promise.resolve({
+          User: { Attributes: [] },
+          $metadata: undefined,
+        }),
+    );
     expect(
       await service.create({
         email: 'email@mail.com',
         password: 'test',
         group: CognitoGroupsEnum.GROUP_A,
       }),
-    ).toEqual(
-      formatResponse(
-        {
-          email: 'email@mail.com',
-        },
-        SERVICE_NAME,
-      ),
-    );
+    ).toEqual(formatResponse([], SERVICE_NAME));
   });
 
   it('should return create error', async () => {
@@ -96,7 +95,8 @@ describe('AppService', () => {
     jest
       .spyOn(cognitoService, 'login')
       .mockImplementation(
-        async (): Promise<InitiateAuthResponse> => Promise.resolve({}),
+        async (): Promise<InitiateAuthCommandOutput> =>
+          Promise.resolve({ AuthenticationResult: {}, $metadata: undefined }),
       );
     expect(
       await service.login({ email: 'email@mail.com', password: '123' }),
@@ -124,7 +124,10 @@ describe('AppService', () => {
   it('should return update password', async () => {
     jest
       .spyOn(cognitoService, 'updatePassword')
-      .mockImplementation(async (): Promise<void> => Promise.resolve(null));
+      .mockImplementation(
+        async (): Promise<AdminSetUserPasswordCommandOutput> =>
+          Promise.resolve({ $metadata: { httpStatusCode: 200 } }),
+      );
     expect(
       await service.updatePassword(
         {
