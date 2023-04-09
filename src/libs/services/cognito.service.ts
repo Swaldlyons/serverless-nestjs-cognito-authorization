@@ -1,10 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { CognitoIdentityServiceProvider } from 'aws-sdk';
 import {
   AdminCreateUserResponse,
+  CognitoIdentityProvider,
   InitiateAuthResponse,
-} from 'aws-sdk/clients/cognitoidentityserviceprovider';
+} from '@aws-sdk/client-cognito-identity-provider';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 import { CognitoGroupsEnum } from '/opt/src/libs/enums/cognito-groups-enum';
 import { EnvironmentInterface } from '/opt/src/libs/interfaces/environment.interface';
@@ -20,7 +20,7 @@ export class CognitoService {
 
   constructor(
     @Inject(COGNITO_IDENTITY)
-    private readonly _cognito: CognitoIdentityServiceProvider,
+    private readonly _cognito: CognitoIdentityProvider,
     private readonly _configService: ConfigService,
   ) {
     const { clientId, userPoolId }: EnvironmentInterface =
@@ -46,30 +46,25 @@ export class CognitoService {
     const temporaryPassword = `${random.substring(2, 10).toUpperCase()}${random
       .substring(11, 36)
       .toLowerCase()}@`;
-    const response: AdminCreateUserResponse = await this._cognito
-      .adminCreateUser({
+    const response: AdminCreateUserResponse =
+      await this._cognito.adminCreateUser({
         UserPoolId: this._userPoolId,
         Username: email,
         TemporaryPassword: temporaryPassword,
         MessageAction: 'SUPPRESS',
-      })
-      .promise();
+      });
 
-    await this._cognito
-      .adminAddUserToGroup({
-        GroupName: group,
-        UserPoolId: this._userPoolId,
-        Username: email,
-      })
-      .promise();
-    await this._cognito
-      .adminSetUserPassword({
-        Password: password,
-        Permanent: true,
-        UserPoolId: this._userPoolId,
-        Username: email,
-      })
-      .promise();
+    await this._cognito.adminAddUserToGroup({
+      GroupName: group,
+      UserPoolId: this._userPoolId,
+      Username: email,
+    });
+    await this._cognito.adminSetUserPassword({
+      Password: password,
+      Permanent: true,
+      UserPoolId: this._userPoolId,
+      Username: email,
+    });
     log('INFO', { SERVICE_NAME, response });
   }
 
@@ -82,14 +77,12 @@ export class CognitoService {
       },
     });
 
-    await this._cognito
-      .adminSetUserPassword({
-        Password: password,
-        Permanent: true,
-        UserPoolId: this._userPoolId,
-        Username: email,
-      })
-      .promise();
+    await this._cognito.adminSetUserPassword({
+      Password: password,
+      Permanent: true,
+      UserPoolId: this._userPoolId,
+      Username: email,
+    });
   }
 
   async login(email: string, password: string): Promise<InitiateAuthResponse> {
@@ -101,15 +94,13 @@ export class CognitoService {
       },
     });
 
-    return await this._cognito
-      .initiateAuth({
-        AuthFlow: 'USER_PASSWORD_AUTH',
-        ClientId: this._clientId,
-        AuthParameters: {
-          USERNAME: email,
-          PASSWORD: password,
-        },
-      })
-      .promise();
+    return await this._cognito.initiateAuth({
+      AuthFlow: 'USER_PASSWORD_AUTH',
+      ClientId: this._clientId,
+      AuthParameters: {
+        USERNAME: email,
+        PASSWORD: password,
+      },
+    });
   }
 }

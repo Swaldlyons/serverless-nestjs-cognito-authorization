@@ -1,6 +1,6 @@
+import { CognitoIdentityProvider } from '@aws-sdk/client-cognito-identity-provider';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigType } from '@nestjs/config';
-import { CognitoIdentityServiceProvider } from 'aws-sdk';
 
 import { AppService } from '/opt/src/app.service';
 import config from '/opt/src/config';
@@ -23,7 +23,7 @@ const apiVersion = 'latest';
       provide: COGNITO_IDENTITY,
       inject: [config.KEY],
       useFactory: ({ region }: ConfigType<typeof config>) =>
-        new CognitoIdentityServiceProvider({
+        new CognitoIdentityProvider({
           apiVersion,
           region,
         }),

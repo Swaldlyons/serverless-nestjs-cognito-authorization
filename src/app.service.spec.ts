@@ -1,8 +1,10 @@
+import {
+  CognitoIdentityProvider,
+  InitiateAuthResponse,
+} from '@aws-sdk/client-cognito-identity-provider';
 import { HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { CognitoIdentityServiceProvider } from 'aws-sdk';
-import { InitiateAuthResponse } from 'aws-sdk/clients/cognitoidentityserviceprovider';
 
 import { AppService } from '/opt/src/app.service';
 import { CognitoGroupsEnum } from '/opt/src/libs/enums/cognito-groups-enum';
@@ -36,7 +38,7 @@ describe('AppService', () => {
         },
         {
           provide: COGNITO_IDENTITY,
-          useValue: CognitoIdentityServiceProvider,
+          useValue: CognitoIdentityProvider,
         },
       ],
     }).compile();

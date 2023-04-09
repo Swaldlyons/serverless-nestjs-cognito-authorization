@@ -1,6 +1,6 @@
+import { InitiateAuthResponse } from '@aws-sdk/client-cognito-identity-provider';
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { APIGatewayProxyResult } from 'aws-lambda';
-import { InitiateAuthResponse } from 'aws-sdk/clients/cognitoidentityserviceprovider';
 
 import { CreateRequestsDto } from '/opt/src/libs/dtos/requests/create-requests.dto';
 import { LoginRequestsDto } from '/opt/src/libs/dtos/requests/login-requests.dto';
